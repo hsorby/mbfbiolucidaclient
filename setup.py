@@ -1,5 +1,7 @@
 import os
 import re
+import codecs
+
 from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -28,5 +30,6 @@ setup(
     license='Apache Software License',
     author='Hugh Sorby',
     author_email='h.sorby@auckland.ac.nz',
-    description='Simple client for the MBF Biolucida API.'
+    description='Simple client for the MBF Biolucida API.',
+    install_requires=['requests']
 )
