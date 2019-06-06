@@ -38,37 +38,54 @@ def authenticated_header(token):
     return {'token': token}
 
 
-def read_config():
+def read_config(user_info=None):
     global USER, PASSWORD, TOKEN
     config = configparser.ConfigParser()
-    config.read(os.path.join(here, '.secrets_dir', 'hsorby.info'))
-    USER = config['USERINFO']['Username']
-    PASSWORD = config['USERINFO']['Password']
-    TOKEN = config['USERINFO']['Token']
+    config.read(os.path.join(here, '.secrets_dir', user_info if user_info else 'empty.info'))
+
+    if 'USERINFO' in config:
+        USER = config['USERINFO']['Username']
+        PASSWORD = config['USERINFO']['Password']
+        TOKEN = config['USERINFO']['Token']
+
+
+def response_ok(response):
+    json_output = response.json()
+    return response.status_code == 200 and json_output['status'] == 'success'
+
+
+def response_error(response):
+    json_output = response.json()
+    return json_output['status']
 
 
 def main():
-    read_config()
+    user_info = None
     args = sys.argv[:]
-    print(args.pop(0))
+    if len(args) > 1:
+        args.pop(0)
+        user_info = args.pop(0)
+
+    read_config(user_info)
 
     response = requests.post(authenticate(), authenticate_parameters())
-    if response.status_code == 200:
-        print(response.json())
+    if response_ok(response):
         token = response.json()['token']
 
-        for image_id in range(1, 5):
+        for image_id in range(0, 6):
             response = requests.get(image(image_id))
-            if response.status_code == 200:
+            if response_ok(response):
                 print(response.json())
             else:
-                print('No access {}'.format(image_id))
+                print('No access to {} - {}'.format(image_id, response_error(response)))
         # Need to be admin user to get this data.
         # response = requests.get(user_all(), headers=authenticated_header(token))
         # print(response.json())
 
         response = requests.get(folders(), headers=authenticated_header(token))
         print(response.json())
+    else:
+        print('Authentication did not go well - {}'.format(response_error(response)))
 
 
 if __name__ == "__main__":
